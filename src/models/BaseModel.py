@@ -33,7 +33,7 @@ buyer_seller = Table(
     Column("seller_id", UUID(as_uuid=True), ForeignKey("sellers.id"), primary_key=True),
 )
 
-class User(Base):
+class Users(Base):
     __tablename__ = "users"
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4, unique=True)
@@ -44,15 +44,19 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
 
-    buyer_profile: Mapped["Buyer"] = relationship(back_populates="user", uselist=False)
-    seller_profile: Mapped["Seller"] = relationship(back_populates="user", uselist=False)
-    reviews_given: Mapped[list["Review"]] = relationship(back_populates="reviewer")
-    comments: Mapped[list["Comments"]] = relationship(back_populates="user_comments")
-    posts: Mapped[list["Post"]] = relationship(back_populates="user")
-    arts: Mapped[list["FanArt"]] = relationship(back_populates="user")
-    tags_received: Mapped[list["Tag"]] = relationship(back_populates="tagged_user", cascade="all, delete-orphan")
+    buyer_profile: Mapped["Buyers"] = relationship("Buyers", back_populates="user", uselist=False)
+    seller_profile: Mapped["Sellers"] = relationship("Sellers", back_populates="user", uselist=False)
+    reviews_given: Mapped[list["Reviews"]] = relationship("Reviews", back_populates="reviewer")
+    comments: Mapped[list["Comments"]] = relationship("Comments", back_populates="user_comments")
+    posts: Mapped[list["Posts"]] = relationship("Posts", back_populates="user")
+    arts: Mapped[list["FanArts"]] = relationship("FanArts", back_populates="user")
+    tags_received: Mapped[list["Tags"]] = relationship("Tags", back_populates="tagged_user", cascade="all, delete-orphan")
+    teams: Mapped[list["TeamMembers"]] = relationship("TeamMembers", back_populates="user")
+    sent_messages: Mapped[list["Messages"]] = relationship("Messages", back_populates="sender")
+    received_messages: Mapped[list["Messages"]] = relationship("Messages", back_populates="receiver")
+    chat: Mapped[list["ChatMembers"]] = relationship("ChatMembers", back_populates="user")
 
-class Tag(Base):
+class Tags(Base):
     __tablename__ = "tags"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -66,7 +70,7 @@ class Tag(Base):
 
     tagged_user: Mapped["User"] = relationship(back_populates="tags_received")
 
-class Order(Base):
+class Orders(Base):
     __tablename__ = "orders"
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
@@ -81,19 +85,19 @@ class Order(Base):
     buyer: Mapped["Buyer"] = relationship("Buyer", back_populates="orders")
     seller: Mapped["Seller"] = relationship("Seller", back_populates="orders")
 
-class Buyer(Base):
+class Buyers(Base):
     __tablename__ = "buyers"
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
     budget: Mapped[float] = mapped_column(Float, nullable=True)
 
-    orders: Mapped[list["Order"]] = relationship("Order", back_populates="buyer")
-    reviews: Mapped[list["Review"]] = relationship(back_populates="seller_review")
-    user: Mapped["User"] = relationship(back_populates="buyer_profile")
-    sellers: Mapped[list["Seller"]] = relationship("Seller", back_populates="clients", secondary=buyer_seller)
+    orders: Mapped[list["Orders"]] = relationship("Orders", back_populates="buyer")
+    reviews: Mapped[list["Reviews"]] = relationship("Reviews", back_populates="seller_review")
+    user: Mapped["Users"] = relationship("Users", back_populates="buyer_profile")
+    sellers: Mapped[list["Sellers"]] = relationship("Sellers", back_populates="clients", secondary=buyer_seller)
 
-class Seller(Base):
+class Sellers(Base):
     __tablename__ = "sellers"
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
@@ -103,12 +107,12 @@ class Seller(Base):
     rating: Mapped[float] = mapped_column(Float, default=0.0)
     order_status: Mapped[OrderStatus] = mapped_column(Enum(OrderStatus), nullable=False, default=OrderStatus.PENDING)
 
-    orders: Mapped[list["Order"]] = relationship("Order", back_populates="seller")
-    reviews: Mapped[list["Review"]] = relationship(back_populates="buyer_review")
-    clients: Mapped[list["Buyer"]] = relationship("Buyer", back_populates="sellers", secondary=buyer_seller)
-    user: Mapped["User"] = relationship(back_populates="seller_profile")
+    orders: Mapped[list["Orders"]] = relationship("Orders", back_populates="seller")
+    reviews: Mapped[list["Reviews"]] = relationship("Reviews", back_populates="buyer_review")
+    clients: Mapped[list["Buyers"]] = relationship("Buyers", back_populates="sellers", secondary=buyer_seller)
+    user: Mapped["Users"] = relationship("Users", back_populates="seller_profile")
 
-class Post(Base):
+class Posts(Base):
     __tablename__ = "posts"
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
@@ -122,10 +126,10 @@ class Post(Base):
     file_data: Mapped[bytes] = mapped_column(LargeBinary, nullable=True)
     file_name: Mapped[str] = mapped_column(String, nullable=False)
 
-    user: Mapped["User"] = relationship(back_populates="posts")
+    user: Mapped["Users"] = relationship(back_populates="posts")
     comments: Mapped[list["Comments"]] = relationship(back_populates="post", cascade="all, delete-orphan")
 
-class FanArt(Base):
+class FanArts(Base):
     __tablename__ = "fanArts"
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
@@ -139,8 +143,9 @@ class FanArt(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now)
 
-    user: Mapped["User"] = relationship(back_populates="arts")
-    comments: Mapped[list["Comments"]] = relationship(back_populates="fanArt", cascade="all, delete-orphan")
+    user: Mapped["Users"] = relationship("User", back_populates="arts")
+    comments: Mapped[list["Comments"]] = relationship("Comments", back_populates="fanArt", cascade="all, delete-orphan")
+
 
 class Comments(Base):
     __tablename__ = "comments"
@@ -166,11 +171,11 @@ class Comments(Base):
     )
 
     parent_comment: Mapped["Comments"] = relationship("Comments", remote_side=[id], backref="replies")
-    user_comments: Mapped["User"] = relationship(back_populates="comments")
-    post: Mapped["Post"] = relationship(back_populates="comments")
-    fanArt: Mapped["FanArt"] = relationship(back_populates="comments")
+    user_comments: Mapped["Users"] = relationship("Users", back_populates="comments")
+    post: Mapped["Posts"] = relationship("Posts", back_populates="comments")
+    fanArt: Mapped["FanArts"] = relationship("FanArts", back_populates="comments")
 
-class Review(Base):
+class Reviews(Base):
     __tablename__ = "reviews"
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
@@ -181,6 +186,63 @@ class Review(Base):
     content: Mapped[str] = mapped_column(String, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
 
-    seller_review: Mapped["Seller"] = relationship(back_populates="reviews")
-    buyer_review: Mapped["Buyer"] = relationship(back_populates="reviews")
-    reviewer: Mapped["User"] = relationship(back_populates="reviews_given")
+    seller_review: Mapped["Sellers"] = relationship("Sellers", back_populates="reviews")
+    buyer_review: Mapped["Buyers"] = relationship("Buyers", back_populates="reviews")
+    reviewer: Mapped["Users"] = relationship("Users", back_populates="reviews_given")
+
+class Teams(Base):
+    __tablename__ = "teams"
+
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
+    name: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
+
+    members: Mapped[list["TeamMembers"]] = relationship("TeamMembers", back_populates="team", cascade="all, delete-orphan")
+
+class TeamMembers(Base):
+
+    __tablename__ = "team_members"
+
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
+    team_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("teams.id"), nullable=False)
+    user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    joined_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
+
+    team: Mapped["Teams"] = relationship("Teams", back_populates="members")
+    user: Mapped["Users"] = relationship("Users", back_populates="teams")
+
+class Messages(Base):
+    __tablename__ = "messages"
+
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False)
+    sender_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    receiver_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    content: Mapped[str] = mapped_column(String, nullable=False)
+    sent_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
+    is_read: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    sender: Mapped["Users"] = relationship("User", foreign_keys=[sender_id], back_populates="sent_messages")
+    chat: Mapped["Chats"] = relationship("Chat", back_populates="messages")
+
+class Chats(Base):
+    __tablename__ = "chats"
+
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
+    name: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
+
+    members: Mapped[list["ChatMembers"]] = relationship("ChatMembers", back_populates="chat")
+    messages: Mapped[list["Messages"]] = relationship("Messages", back_populates="chat")
+
+class ChatMembers(Base):
+    __tablename__ = "chat_members"
+
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
+    chat_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("chats.id"), nullable=False)
+    user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+
+    chat: Mapped["Chats"] = relationship("Chats", back_populates="members")
+    user: Mapped["Users"] = relationship("Users", back_populates="chats")
+
+
+#TODO : Work more on the saved favorites part and start testing with the database
