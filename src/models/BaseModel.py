@@ -1,108 +1,186 @@
-from uuid import uuid4
-
-from sqlalchemy import Column, Integer, String, Boolean, TIMESTAMP, ForeignKey, UUID, Enum, Float, JSON, DateTime, Index
-from sqlalchemy.orm import relationship
-from database import Base
+from sqlalchemy.orm import Mapped, mapped_column, relationship, DeclarativeBase
+from sqlalchemy import Table, ForeignKey, Index, Enum, UUID, LargeBinary, Float, JSON, Text, String, Boolean, DateTime, \
+    Integer, Column
 from datetime import datetime
+from enum import Enum as PyEnum
+from uuid import uuid4
+from database import Base
 
 
-class UserRole(Enum):
+class UserRole(PyEnum):
     BUYER = "buyer"
     SELLER = "seller"
     BOTH = "both"
     NONE = "none"
 
+class ContentType(PyEnum):
+    POST = "post"
+    FANART = "fanart"
+    COMMENT = "comment"
 
-# first lets create User
+class OrderStatus(PyEnum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+    INPROGRESS = "inprogress"
+    CANCELLED = "cancelled"
+    COMPLETED = "completed"
+
+buyer_seller = Table(
+    "buyer_seller",
+    Base.metadata,
+    Column("buyer_id", UUID(as_uuid=True), ForeignKey("buyers.id"), primary_key=True),
+    Column("seller_id", UUID(as_uuid=True), ForeignKey("sellers.id"), primary_key=True),
+)
+
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4())
-    username = Column(String, nullable=False, unique=True)
-    email = Column(String, nullable=False, unique=True)
-    password_hashed = Column(String, nullable=False)
-    role = Column(UserRole, nullable=True)
-    is_active = Column(Boolean, nullable=False)
-    created_at = Column(TIMESTAMP(timezone=True), nullable=False)
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4, unique=True)
+    username: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    email: Mapped[str] = mapped_column(String, nullable=False, unique=True)
+    password_hashed: Mapped[str] = mapped_column(String, nullable=False)
+    role: Mapped[UserRole] = mapped_column(Enum(UserRole), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
 
-    buyer_profile = relationship("Buyer", back_populates="user", uselist=False)
-    seller_profile = relationship("Seller", back_populates="user", uselist=False)
-    reviews_given = relationship("Review", back_populates="reviewer")
-    comments = relationship("Comments", back_populates="user_comments")
+    buyer_profile: Mapped["Buyer"] = relationship(back_populates="user", uselist=False)
+    seller_profile: Mapped["Seller"] = relationship(back_populates="user", uselist=False)
+    reviews_given: Mapped[list["Review"]] = relationship(back_populates="reviewer")
+    comments: Mapped[list["Comments"]] = relationship(back_populates="user_comments")
+    posts: Mapped[list["Post"]] = relationship(back_populates="user")
+    arts: Mapped[list["FanArt"]] = relationship(back_populates="user")
+    tags_received: Mapped[list["Tag"]] = relationship(back_populates="tagged_user", cascade="all, delete-orphan")
 
+class Tag(Base):
+    __tablename__ = "tags"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    tagged_user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    content_type: Mapped[ContentType] = mapped_column(Enum(ContentType), nullable=False)
+    content_id: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    __table_args__ = (
+        Index("idx_content_type_content_id", "content_type", "content_id"),
+    )
+
+    tagged_user: Mapped["User"] = relationship(back_populates="tags_received")
+
+class Order(Base):
+    __tablename__ = "orders"
+
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
+    buyer_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("buyers.id"), nullable=False)
+    seller_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("sellers.id"), nullable=False)
+    status: Mapped[OrderStatus] = mapped_column(Enum(OrderStatus), nullable=False, default=OrderStatus.PENDING)
+    description: Mapped[str] = mapped_column(Text, nullable=True)  # Details about the order
+    total_price: Mapped[float] = mapped_column(Float, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+    buyer: Mapped["Buyer"] = relationship("Buyer", back_populates="orders")
+    seller: Mapped["Seller"] = relationship("Seller", back_populates="orders")
 
 class Buyer(Base):
     __tablename__ = "buyers"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4())
-    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
-    budget = Column(Float, nullable=True)
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+    budget: Mapped[float] = mapped_column(Float, nullable=True)
 
-    reviews = relationship("Review", back_populates="seller_review")
-    user = relationship("User", back_populates="buyer_profile")
-
+    orders: Mapped[list["Order"]] = relationship("Order", back_populates="buyer")
+    reviews: Mapped[list["Review"]] = relationship(back_populates="seller_review")
+    user: Mapped["User"] = relationship(back_populates="buyer_profile")
+    sellers: Mapped[list["Seller"]] = relationship("Seller", back_populates="clients", secondary=buyer_seller)
 
 class Seller(Base):
     __tablename__ = "sellers"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4())
-    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
-    skills = Column(JSON, nullable=False)
-    portfolio_url = Column(String, nullable=True)
-    rating = Column(Float, default=0.0)
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+    skills: Mapped[dict] = mapped_column(JSON, nullable=False)
+    portfolio_url: Mapped[str] = mapped_column(String, nullable=True)
+    rating: Mapped[float] = mapped_column(Float, default=0.0)
+    order_status: Mapped[OrderStatus] = mapped_column(Enum(OrderStatus), nullable=False, default=OrderStatus.PENDING)
 
-    reviews = relationship("Review", back_populates="buyer_review")
-    user = relationship("User", back_populates="seller_profile")
+    orders: Mapped[list["Order"]] = relationship("Order", back_populates="seller")
+    reviews: Mapped[list["Review"]] = relationship(back_populates="buyer_review")
+    clients: Mapped[list["Buyer"]] = relationship("Buyer", back_populates="sellers", secondary=buyer_seller)
+    user: Mapped["User"] = relationship(back_populates="seller_profile")
 
 class Post(Base):
     __tablename__ = "posts"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4())
-    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
-    username = Column(String, ForeignKey("users.username"),nullable=False, unique=True)
-    
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    username: Mapped[str] = mapped_column(String, ForeignKey("users.username"), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now)
+    file_path: Mapped[str] = mapped_column(String, nullable=False)
+    file_data: Mapped[bytes] = mapped_column(LargeBinary, nullable=True)
+    file_name: Mapped[str] = mapped_column(String, nullable=False)
+
+    user: Mapped["User"] = relationship(back_populates="posts")
+    comments: Mapped[list["Comments"]] = relationship(back_populates="post", cascade="all, delete-orphan")
+
+class FanArt(Base):
+    __tablename__ = "fanArts"
+
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    username: Mapped[str] = mapped_column(String, ForeignKey("users.username"), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=True)
+    file_path: Mapped[str] = mapped_column(String, nullable=False)
+    file_data: Mapped[bytes] = mapped_column(LargeBinary, nullable=True)
+    file_name: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now)
+
+    user: Mapped["User"] = relationship(back_populates="arts")
+    comments: Mapped[list["Comments"]] = relationship(back_populates="fanArt", cascade="all, delete-orphan")
 
 class Comments(Base):
     __tablename__ = "comments"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4())
-    parent_comment_id = Column(UUID(as_uuid=True), ForeignKey("comments.id"), nullable=True)
-    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
-    username = Column(String, ForeignKey("users.username"), nullable=False, unique=True)
-    content = Column(String, nullable=False)
-    created_at = Column(DateTime, default=datetime.now(), nullable=False)
-    updated_at = Column(DateTime, default=datetime.now(), onupdate=datetime.now(), nullable=True)
-    content_id = Column(Integer, nullable=False)  # ID of the content being commented on
-    content_type = Column(String, nullable=False)  # E.g., "post", "fanart"
-    status = Column(String, default="approved")
-    likes = Column(Integer, default=0)
-    dislikes = Column(Integer, default=0)
-    is_deleted = Column(Boolean, default=False)
-    ip_address = Column(String, nullable=True)
-    #metadata = Column(JSON, nullable=True) done know yet if all models should have this
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
+    parent_comment_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("comments.id"), nullable=True)
+    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    post_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("posts.id"), nullable=True)
+    fanArt_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("fanArts.id"), nullable=True)
+    username: Mapped[str] = mapped_column(String, ForeignKey("users.username"), nullable=False)
+    content: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now, nullable=True)
+    content_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    content_type: Mapped[ContentType] = mapped_column(Enum(ContentType), nullable=False)
+    likes: Mapped[int] = mapped_column(Integer, default=0)
+    dislikes: Mapped[int] = mapped_column(Integer, default=0)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
     __table_args__ = (
-        Index('idx_content_id', 'content_id'),
-        Index('idx_parent_comment_id', 'parent_comment_id')
+        Index("idx_content_id", "content_id"),
+        Index("idx_parent_comment_id", "parent_comment_id"),
     )
 
-    user_comments = relationship("User", back_populates="comments", foreign_keys="Comments.user_id")
-    parent_comment = relationship("Comments", remote_side=[id], backref="replies")
-
+    parent_comment: Mapped["Comments"] = relationship("Comments", remote_side=[id], backref="replies")
+    user_comments: Mapped["User"] = relationship(back_populates="comments")
+    post: Mapped["Post"] = relationship(back_populates="comments")
+    fanArt: Mapped["FanArt"] = relationship(back_populates="comments")
 
 class Review(Base):
     __tablename__ = "reviews"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4())
-    seller_id = Column(Integer, ForeignKey("sellers.id"), nullable=False)
-    buyer_id = Column(Integer, ForeignKey("buyers.id"), nullable=False)
-    reviewer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    rating = Column(Integer, nullable=False)
-    content = Column(String, nullable=False)
-    created_at = Column(TIMESTAMP(timezone=True), nullable=False)
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
+    seller_id: Mapped[int] = mapped_column(Integer, ForeignKey("sellers.id"), nullable=False)
+    buyer_id: Mapped[int] = mapped_column(Integer, ForeignKey("buyers.id"), nullable=False)
+    reviewer_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    rating: Mapped[int] = mapped_column(Integer, nullable=False)
+    content: Mapped[str] = mapped_column(String, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
 
-    seller_review = relationship("Seller", back_populates="reviews", foreign_keys="Review.seller_id")
-    buyer_review = relationship("Buyer", back_populates="reviews", foreign_keys="Review.buyer_id")
-    reviewer = relationship("User", back_populates="reviews_given", foreign_keys="Review.reviewer_id")
-
-
+    seller_review: Mapped["Seller"] = relationship(back_populates="reviews")
+    buyer_review: Mapped["Buyer"] = relationship(back_populates="reviews")
+    reviewer: Mapped["User"] = relationship(back_populates="reviews_given")
