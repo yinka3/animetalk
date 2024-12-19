@@ -55,7 +55,8 @@ class Users(Base):
     sent_messages: Mapped[list["Messages"]] = relationship("Messages", back_populates="sender")
     received_messages: Mapped[list["Messages"]] = relationship("Messages", back_populates="receiver")
     chat: Mapped[list["ChatMembers"]] = relationship("ChatMembers", back_populates="user")
-
+    saved_contents: Mapped[list["SavedContents"]] = relationship("SavedContents", back_populates="user")
+    
 class Tags(Base):
     __tablename__ = "tags"
 
@@ -243,6 +244,18 @@ class ChatMembers(Base):
 
     chat: Mapped["Chats"] = relationship("Chats", back_populates="members")
     user: Mapped["Users"] = relationship("Users", back_populates="chats")
+
+class SavedContents(Base):
+    __tablename__ = "saved_contents"
+
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    content_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), nullable=False)  # ID of the saved content
+    content_type: Mapped[ContentType] = mapped_column(Enum(ContentType), nullable=False)
+    saved_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
+
+    user: Mapped["Users"] = relationship("Users", back_populates="saved_contents")
+
 
 
 #TODO : Work more on the saved favorites part and start testing with the database
