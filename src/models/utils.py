@@ -2,6 +2,7 @@ import re
 from enum import Enum
 
 class UserRole(Enum):
+    USER = "user"
     BUYER = "buyer"
     SELLER = "seller"
     BOTH = "both"
