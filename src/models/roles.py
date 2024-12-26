@@ -1,3 +1,5 @@
+from typing import Optional
+
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import Table, ForeignKey, Enum, UUID, String, Boolean, DateTime, Integer, Column
 from datetime import datetime
@@ -26,8 +28,8 @@ class Users(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
 
-    buyer_profile: Mapped["Buyers"] = relationship("Buyers", back_populates="user", uselist=False)
-    seller_profile: Mapped["Sellers"] = relationship("Sellers", back_populates="user", uselist=False)
+    buyer_profile: Mapped[Optional["Buyers"]] = relationship("Buyers", back_populates="user", uselist=False)
+    seller_profile: Mapped[Optional["Sellers"]] = relationship("Sellers", back_populates="user", uselist=False)
     reviews_given: Mapped[list["Reviews"]] = relationship("Reviews", back_populates="reviewer")
     comments: Mapped[list["Comments"]] = relationship("Comments", back_populates="user_comments")
     posts: Mapped[list["Posts"]] = relationship("Posts", back_populates="user")
@@ -43,7 +45,7 @@ class Buyers(Base):
     __tablename__ = "buyers"
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+    user_id: Mapped[UUID] = mapped_column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
 
     jobs: Mapped[list["Jobs"]] = relationship("Jobs", back_populates="buyer")
     orders: Mapped[list["Orders"]] = relationship("Orders", back_populates="buyer")
@@ -55,7 +57,7 @@ class Sellers(Base):
     __tablename__ = "sellers"
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+    user_id: Mapped[UUID] = mapped_column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
     portfolio_url: Mapped[str] = mapped_column(String, nullable=True)
 
     applications: Mapped[list["JobApplications"]] = relationship("JobApplication", back_populates="seller")
@@ -81,6 +83,7 @@ class TeamMembers(Base):
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
     team_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("teams.id"), nullable=False)
     user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    username: Mapped[str] = mapped_column(String, ForeignKey("users.username"),nullable=False, unique=True)
     joined_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
 
     team: Mapped["Teams"] = relationship("Teams", back_populates="members")

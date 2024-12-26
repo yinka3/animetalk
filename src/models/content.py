@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship, session
 from sqlalchemy import ForeignKey, Index, Enum, UUID, LargeBinary, Text, String, Boolean, DateTime, Integer
 from datetime import datetime
 from uuid import uuid4
@@ -11,7 +11,7 @@ class Comments(Base):
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
     parent_comment_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("comments.id"), nullable=True)
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id: Mapped[UUID] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
     post_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("posts.id"), nullable=True)
     fanArt_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("fanArts.id"), nullable=True)
     username: Mapped[str] = mapped_column(String, ForeignKey("users.username"), nullable=False)
@@ -38,7 +38,7 @@ class Posts(Base):
     __tablename__ = "posts"
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id: Mapped[UUID] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
     username: Mapped[str] = mapped_column(String, ForeignKey("users.username"), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=True)
@@ -55,7 +55,7 @@ class FanArts(Base):
     __tablename__ = "fanArts"
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
+    user_id: Mapped[UUID] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
     username: Mapped[str] = mapped_column(String, ForeignKey("users.username"), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=True)
@@ -83,16 +83,22 @@ class SavedContents(Base):
 class Tags(Base):
     __tablename__ = "tags"
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    tagged_user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
-    content_type: Mapped[ContentType] = mapped_column(Enum(ContentType), nullable=False)
-    content_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
+    tagged_user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    content_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), nullable=False)  # Reference to Post or FanArt ID
+    content_type: Mapped[ContentType] = mapped_column(Enum(ContentType), nullable=False)  # Use ContentType Enum
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
 
-    __table_args__ = (
-        Index("idx_content_type_content_id", "content_type", "content_id"),
-    )
+    tagged_user: Mapped["roles.Users"] = relationship("User", back_populates="tags_received")
 
-    tagged_user: Mapped["roles.Users"] = relationship("Users",back_populates="tags_received")
+    # @property
+    # def content(self):
+    #     """Dynamically fetch the related content (Post or FanArt) based on content_type."""
+    #     if self.content_type == ContentType.POST:
+    #         return session.query(Posts).filter_by(id=self.content_id).first()
+    #     elif self.content_type == ContentType.FANART:
+    #         return session.query(FanArts).filter_by(id=self.content_id).first()
+    #     return None
 
 class Reviews(Base):
     __tablename__ = "reviews"
