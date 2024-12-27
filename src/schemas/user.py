@@ -7,8 +7,14 @@ from datetime import datetime
 from enum import Enum
 
 
+class OrderStatus(Enum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+    INPROGRESS = "inprogress"
+    CANCELLED = "cancelled"
+    COMPLETED = "completed"
 
-## TODO: decide if I want to keep a limit to the password or not and where
 
 class UserRoleEnum(str, Enum):
     BUYER = "buyer"
@@ -21,22 +27,16 @@ class BuyersBaseSchema(BaseModel):
     id: UUID
     user_id: UUID
 
-
     class Config:
         orm_mode = True
-
 
 class BuyersSchema(BuyersBaseSchema):
     pass
 
-    class Config:
-        orm_mode = True
 
 class CreateBuyerSchema(BuyersBaseSchema):
     user_id: UUID = Field(..., description="The buyer's unique ID.")
 
-    class Config:
-        orm_mode = True
 
 class SellersBaseSchema(BaseModel):
     skills: dict = Field(..., description="Skills of the seller.")
@@ -51,14 +51,10 @@ class SellersSchema(SellersBaseSchema):
     id: UUID
     user_id: UUID
 
-    class Config:
-        orm_mode = True
 
 class CreateSellerSchema(SellersBaseSchema):
     user_id: UUID = Field(..., description="The seller's unique ID.")
 
-    class Config:
-        orm_mode = True
 
 
 class UserBaseSchema(BaseModel):
@@ -77,8 +73,6 @@ class UserProfileSchema(UserBaseSchema):
     buyer_profile: Optional[BuyersSchema] = Field(None, description="The user's buyer profile.")
     seller_profile: Optional[SellersSchema] = Field(None, description="The user's seller profile.")
 
-    class Config:
-        orm_mode = True
 
 
 class UserSchema(UserProfileSchema):
@@ -91,14 +85,10 @@ class UserSchema(UserProfileSchema):
 class UpdateUserSchema(UserBaseSchema):
     pass
 
-    class Config:
-        orm_mode = True
 
 class DisplayUserSummarySchema(UserBaseSchema):
     id: UUID = Field(..., description="The unique identifier of the user.")
 
-    class Config:
-        orm_mode = True
 
 
 class CreateUserSchema(UserBaseSchema):
@@ -121,8 +111,6 @@ class CreateUserSchema(UserBaseSchema):
             raise ValueError("Password must contain at least one uppercase letter.")
         return value
 
-    class Config:
-        orm_mode = True
 
 class DeleteUserSchema(BaseModel):
     id: UUID = Field(..., description="The unique identifier of the user.")

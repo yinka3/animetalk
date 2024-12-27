@@ -21,6 +21,11 @@ class OrderStatus(Enum):
     CANCELLED = "cancelled"
     COMPLETED = "completed"
 
+class JobStatus(Enum):
+    PENDING = "pending"
+    ACCEPTED = "accepted"
+    REJECTED = "rejected"
+
 class Proficiency(Enum):
     BEGINNER = "beginner"
     INTERMEDIATE = "intermediate"

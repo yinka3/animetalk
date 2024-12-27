@@ -4,7 +4,7 @@ from datetime import datetime
 from uuid import uuid4
 from database import Base
 import roles
-from utils import Proficiency, OrderStatus
+from utils import Proficiency, OrderStatus, JobStatus
 
 class SellersSkills(Base):
     __tablename__ = "sellers_skills"
@@ -52,7 +52,7 @@ class JobApplications(Base):
     cover_letter: Mapped[str] = mapped_column(Text, nullable=True)  # Seller's explanation of their suitability
     bid_amount: Mapped[float] = mapped_column(Float, nullable=False)  # Proposed price
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
-    status: Mapped[str] = mapped_column(String(50), default="Pending")  # "Accepted", "Rejected", etc.
+    status: Mapped[JobStatus] = mapped_column(String(50), default=JobStatus.PENDING)  # "Accepted", "Rejected", etc.
 
     job: Mapped["Jobs"] = relationship("Jobs", back_populates="applications")
     seller: Mapped["roles.Sellers"] = relationship("Sellers", back_populates="applications")
@@ -67,7 +67,6 @@ class Jobs(Base):
     description: Mapped[str] = mapped_column(Text, nullable=False)  # Detailed text specification
     budget: Mapped[float] = mapped_column(Float, nullable=True)
     deadline: Mapped[datetime] = mapped_column(DateTime, nullable=True)  # Optional deadline
-    is_open: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
 
     buyer: Mapped["roles.Buyers"] = relationship("Buyers", back_populates="jobs")
