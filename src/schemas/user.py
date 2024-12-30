@@ -1,34 +1,18 @@
 import re
 import team
 from pydantic import BaseModel, EmailStr, Field, validator, field_validator
-from typing import List, Optional
+from typing import Optional
 from uuid import UUID
 from datetime import datetime
-from enum import Enum
+from src.utils import UserRole
 
-
-class OrderStatus(Enum):
-    PENDING = "pending"
-    ACCEPTED = "accepted"
-    REJECTED = "rejected"
-    INPROGRESS = "inprogress"
-    CANCELLED = "cancelled"
-    COMPLETED = "completed"
-
-
-class UserRoleEnum(str, Enum):
-    BUYER = "buyer"
-    SELLER = "seller"
-    BOTH = "both"
-    NONE = "none"
-    USER = "user"
 
 class BuyersBaseSchema(BaseModel):
     id: UUID
     user_id: UUID
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class BuyersSchema(BuyersBaseSchema):
     pass
@@ -44,7 +28,7 @@ class SellersBaseSchema(BaseModel):
     rating: float = Field(0.0, description="Seller's rating.")
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class SellersSchema(SellersBaseSchema):
@@ -60,12 +44,12 @@ class CreateSellerSchema(SellersBaseSchema):
 class UserBaseSchema(BaseModel):
     username: str = Field(..., min_length=3, max_length=50, description="The user's unique username.")
     email: EmailStr = Field(..., description="The user's email address.")
-    role: Optional[UserRoleEnum] = Field(None, description="The user's role in the system.")
+    role: Optional[UserRole] = Field(None, description="The user's role in the system.")
     is_active: bool = Field(..., description="Indicates whether the user is active.")
     created_at: datetime = Field(..., description="The date and time when the user account was created.")
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class UserProfileSchema(UserBaseSchema):
     id: UUID = Field(..., description="The unique identifier of the user.")
@@ -79,7 +63,7 @@ class UserSchema(UserProfileSchema):
     is_active: bool = Field(..., description="Indicates whether the user account is active.")
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class UpdateUserSchema(UserBaseSchema):
@@ -117,6 +101,6 @@ class DeleteUserSchema(BaseModel):
     reason: Optional[str] = Field(None, description="Reason for deleting the user account.")
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 

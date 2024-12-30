@@ -1,6 +1,9 @@
 import re
 from enum import Enum
 
+import bcrypt
+
+
 class UserRole(Enum):
     USER = "user"
     BUYER = "buyer"
@@ -33,3 +36,9 @@ class Proficiency(Enum):
 
 def parse_mentions(content):
     return re.findall(r"@(\w+)", content)
+
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))

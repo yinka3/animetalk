@@ -1,3 +1,4 @@
+import re
 from typing import Optional
 
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -8,7 +9,7 @@ from database import Base
 from chat import Messages, ChatMembers
 from content import SavedContents, Comments, Posts, FanArts, Tags, Reviews
 from orders import Orders, Jobs, JobApplications, SellersSkills
-from utils import UserRole
+from src.utils import UserRole
 
 buyer_seller = Table(
     "buyer_seller",
@@ -27,6 +28,7 @@ class Users(Base):
     role: Mapped[UserRole] = mapped_column(Enum(UserRole), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
+
 
     buyer_profile: Mapped[Optional["Buyers"]] = relationship("Buyers", back_populates="user", uselist=False)
     seller_profile: Mapped[Optional["Sellers"]] = relationship("Sellers", back_populates="user", uselist=False)

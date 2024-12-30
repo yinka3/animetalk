@@ -1,9 +1,9 @@
-from sqlalchemy.orm import Mapped, mapped_column, relationship, session
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import ForeignKey, Index, Enum, UUID, LargeBinary, Text, String, Boolean, DateTime, Integer
 from datetime import datetime
 from uuid import uuid4
 from database import Base
-from utils import ContentType
+from src.utils import ContentType
 import roles
 
 class Comments(Base):

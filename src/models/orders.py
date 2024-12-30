@@ -1,10 +1,10 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import  ForeignKey, Enum, UUID, Float, Text, String, Boolean, DateTime, Integer
+from sqlalchemy import  ForeignKey, Enum, UUID, Float, Text, String, DateTime, Integer
 from datetime import datetime
 from uuid import uuid4
 from database import Base
 import roles
-from utils import Proficiency, OrderStatus, JobStatus
+from src.utils import Proficiency, OrderStatus, JobStatus
 
 class SellersSkills(Base):
     __tablename__ = "sellers_skills"

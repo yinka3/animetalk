@@ -10,7 +10,7 @@ class OrderBaseSchema(BaseModel):
     total_price: float = Field(..., description="The total price of the order.")
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class OrdersSchema(OrderBaseSchema):
@@ -34,4 +34,4 @@ class SearchOrdersSchema(BaseModel):
     end_date: Optional[datetime] = Field(None, description="Filter orders created before this date.")
 
     class Config:
-        orm_mode = True
+        from_attributes = True

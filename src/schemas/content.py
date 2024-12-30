@@ -1,13 +1,11 @@
 from datetime import datetime
-from enum import Enum
+
 from pydantic import BaseModel, Field
 from uuid import UUID
 from typing import Optional
 
-class ContentType(Enum):
-    POST = "post"
-    FANART = "fanart"
-    COMMENT = "comment"
+from src.utils import ContentType
+
 
 # TODO: Will need to create a tag for comments, post, and fanart each
 
@@ -18,14 +16,14 @@ class BaseCommentSchema(BaseModel):
     is_deleted: Optional[bool] = Field(False, description="Whether the comment has been deleted.")
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class UpdateCommentSchema(BaseModel):
     content: Optional[str] = Field(None, description="The updated content of the comment.")
     is_deleted: Optional[bool] = Field(None, description="Mark the comment as deleted.")
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class BasePostSchema(BaseModel):
@@ -35,7 +33,7 @@ class BasePostSchema(BaseModel):
     file_name: str = Field(..., description="The file name of the uploaded content.")
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class UpdatePostSchema(BasePostSchema):
     pass
@@ -48,7 +46,7 @@ class BaseFanArtSchema(BaseModel):
     file_name: str = Field(..., description="The file name of the uploaded content.")
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class UpdateFanArtSchema(BaseFanArtSchema):
     pass
@@ -58,14 +56,14 @@ class BaseSavedContentSchema(BaseModel):
     content_type: str = Field(..., description="The type of the saved content (e.g., 'POST', 'FANART').")
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class BaseReviewSchema(BaseModel):
     rating: int = Field(..., description="The rating given by the reviewer.")
     content: str = Field(..., description="The content of the review.")
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class BaseTagSchema(BaseModel):
     tagged_user_id: UUID = Field(..., description="The ID of the user being tagged.")
@@ -73,14 +71,14 @@ class BaseTagSchema(BaseModel):
     content_type: ContentType = Field(..., description="The type of the associated content (e.g., 'POST', 'FANART').")
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class UpdateTagSchema(BaseModel):
     content_id: Optional[UUID] = Field(None, description="The updated ID of the associated content.")
     content_type: Optional[ContentType] = Field(None, description="The updated type of the associated content (e.g., 'POST', 'FANART').")
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class TagSummarySchema(BaseModel):
@@ -89,7 +87,7 @@ class TagSummarySchema(BaseModel):
     content_type: ContentType = Field(..., description="The type of the associated content (e.g., 'POST', 'FANART').")
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class CommentSchema(BaseCommentSchema):
     id: UUID = Field(..., description="The unique identifier of the comment.")

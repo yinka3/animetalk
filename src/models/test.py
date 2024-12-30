@@ -1,11 +1,6 @@
 import unittest
-import uuid
 
-import utils
-import roles
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from src.models.database import Base
+from src import utils
 
 
 class TestingEnums(unittest.TestCase):
