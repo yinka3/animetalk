@@ -2,16 +2,16 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import  ForeignKey, Enum, UUID, Float, Text, String, DateTime, Integer
 from datetime import datetime
 from uuid import uuid4
-from database import Base
-import roles
+from src.database import Base
+import src.models.roles as roles
 from src.utils import Proficiency, OrderStatus, JobStatus
 
 class SellersSkills(Base):
     __tablename__ = "sellers_skills"
 
-    id: Mapped[UUID] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
     seller_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("sellers.id"), nullable=False)
-    skill_id: Mapped[UUID] = mapped_column(Integer, ForeignKey("skills.id"), nullable=False)
+    skill_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("skills.id"), nullable=False)
     proficiency: Mapped[Proficiency] = mapped_column(Enum(Proficiency), nullable=True)
 
     seller: Mapped["roles.Sellers"] = relationship("Sellers", back_populates="skills")
@@ -20,7 +20,7 @@ class SellersSkills(Base):
 class Skills(Base):
     __tablename__ = "skills"
 
-    id: Mapped[UUID] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True)
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)  # E.g., "3D Modeling", "2D Animation"
     description: Mapped[str] = mapped_column(Text, nullable=True)  # Optional description of the skill
 
