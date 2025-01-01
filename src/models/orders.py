@@ -1,10 +1,15 @@
+from typing import TYPE_CHECKING
+
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import  ForeignKey, Enum, UUID, Float, Text, String, DateTime, Integer
 from datetime import datetime
 from uuid import uuid4
 from src.database import Base
-import src.models.roles as roles
 from src.utils import Proficiency, OrderStatus, JobStatus
+
+
+if TYPE_CHECKING:  # Imports used only for type checking
+    from src.models.roles import Buyers, Sellers
 
 class SellersSkills(Base):
     __tablename__ = "sellers_skills"
@@ -14,8 +19,8 @@ class SellersSkills(Base):
     skill_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("skills.id"), nullable=False)
     proficiency: Mapped[Proficiency] = mapped_column(Enum(Proficiency), nullable=True)
 
-    seller: Mapped["roles.Sellers"] = relationship("Sellers", back_populates="skills")
-    skill: Mapped["Skills"] = relationship("Skills", back_populates="sellers")
+    seller: Mapped["Sellers"] = relationship("Sellers", back_populates="skills", foreign_keys=[seller_id])
+    skill: Mapped["Skills"] = relationship("Skills", back_populates="sellers", foreign_keys=[skill_id])
 
 class Skills(Base):
     __tablename__ = "skills"
@@ -24,7 +29,7 @@ class Skills(Base):
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)  # E.g., "3D Modeling", "2D Animation"
     description: Mapped[str] = mapped_column(Text, nullable=True)  # Optional description of the skill
 
-    sellers: Mapped[list["SellersSkills"]] = relationship("SellerSkills", back_populates="skill")
+    sellers: Mapped[list["SellersSkills"]] = relationship("SellersSkills", back_populates="skills")
 
 
 class Orders(Base):
@@ -39,8 +44,8 @@ class Orders(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, onupdate=datetime.now)
 
-    buyer: Mapped["roles.Buyers"] = relationship("Buyers", back_populates="orders")
-    seller: Mapped["roles.Sellers"] = relationship("Sellers", back_populates="orders")
+    buyer: Mapped["Buyers"] = relationship("Buyers", back_populates="orders", foreign_keys=[buyer_id])
+    seller: Mapped["Sellers"] = relationship("Sellers", back_populates="orders", foreign_keys=[seller_id])
 
 
 class JobApplications(Base):
@@ -54,8 +59,8 @@ class JobApplications(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
     status: Mapped[JobStatus] = mapped_column(String(50), default=JobStatus.PENDING)  # "Accepted", "Rejected", etc.
 
-    job: Mapped["Jobs"] = relationship("Jobs", back_populates="applications")
-    seller: Mapped["roles.Sellers"] = relationship("Sellers", back_populates="applications")
+    job: Mapped["Jobs"] = relationship("Jobs", back_populates="applications", foreign_keys=[job_id])
+    seller: Mapped["Sellers"] = relationship("Sellers", back_populates="applications", foreign_keys=[seller_id])
 
 
 class Jobs(Base):
@@ -69,5 +74,5 @@ class Jobs(Base):
     deadline: Mapped[datetime] = mapped_column(DateTime, nullable=True)  # Optional deadline
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
 
-    buyer: Mapped["roles.Buyers"] = relationship("Buyers", back_populates="jobs")
+    buyer: Mapped["Buyers"] = relationship("Buyers", back_populates="jobs")
     applications: Mapped[list["JobApplications"]] = relationship("JobApplications", back_populates="job", cascade="all, delete-orphan")

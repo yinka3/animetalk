@@ -1,11 +1,12 @@
-import src.models.roles as roles
+from typing import TYPE_CHECKING
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import ForeignKey, UUID, String, Boolean, DateTime
 from datetime import datetime
 from uuid import uuid4
 from src.database import Base
 
-
+if TYPE_CHECKING:
+    from src.models.roles import Users
 
 class Chats(Base):
     __tablename__ = "chats"
@@ -20,15 +21,15 @@ class Chats(Base):
 class Messages(Base):
     __tablename__ = "messages"
 
-    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False)
+    id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
     chat_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("chats.id"), nullable=False)
-    sender_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    receiver_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)  # Single FK to Users
     content: Mapped[str] = mapped_column(String, nullable=False)
     sent_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
+    is_sender: Mapped[bool] = mapped_column(Boolean, nullable=False)  # True if sender, False if receiver
     is_read: Mapped[bool] = mapped_column(Boolean, default=False)
 
-    sender: Mapped["roles.Users"] = relationship("Users", foreign_keys=[sender_id], back_populates="sent_messages")
+    user: Mapped["Users"] = relationship("Users", back_populates="messages")
     chat: Mapped["Chats"] = relationship("Chats", back_populates="messages")
 
 class ChatMembers(Base):
@@ -39,4 +40,4 @@ class ChatMembers(Base):
     user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
 
     chat: Mapped["Chats"] = relationship("Chats", back_populates="members")
-    user: Mapped["roles.Users"] = relationship("Users", back_populates="chats")
+    user: Mapped["Users"] = relationship("Users", back_populates="chats")

@@ -1,13 +1,16 @@
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import Table, ForeignKey, Enum, UUID, String, Boolean, DateTime, Integer, Column
+from sqlalchemy import Table, ForeignKey, Enum, UUID, String, Boolean, DateTime, Column
 from datetime import datetime
 from uuid import uuid4
 from src.database import Base
-from src.models.chat import Messages, ChatMembers
-from src.models.content import SavedContents, Comments, Posts, FanArts, Tags, Reviews
-from src.models.orders import Orders, Jobs, JobApplications, SellersSkills
 from src.utils import UserRole
+
+
+if TYPE_CHECKING:  # Imports used only for type checking
+    from src.models.content import Reviews, Comments, Posts, FanArts, Tags, SavedContents
+    from src.models.chat import Messages, ChatMembers
+    from src.models.orders import Jobs, Orders, JobApplications, SellersSkills
 
 buyer_seller = Table(
     "buyer_seller",
@@ -31,13 +34,12 @@ class Users(Base):
     buyer_profile: Mapped[Optional["Buyers"]] = relationship("Buyers", back_populates="user", uselist=False)
     seller_profile: Mapped[Optional["Sellers"]] = relationship("Sellers", back_populates="user", uselist=False)
     reviews_given: Mapped[list["Reviews"]] = relationship("Reviews", back_populates="reviewer")
-    comments: Mapped[list["Comments"]] = relationship("Comments", back_populates="user_comments", foreign_keys=[Comments.user_id])
-    posts: Mapped[list["Posts"]] = relationship("Posts", back_populates="user")
-    arts: Mapped[list["FanArts"]] = relationship("FanArts", back_populates="user")
+    comments: Mapped[list["Comments"]] = relationship("Comments", back_populates="user_comments", foreign_keys="[Comments.user_id]")
+    posts: Mapped[list["Posts"]] = relationship("Posts", back_populates="user", foreign_keys="[Posts.user_id]")
+    arts: Mapped[list["FanArts"]] = relationship("FanArts", back_populates="user", foreign_keys="[FanArts.user_id]")
     tags_received: Mapped[list["Tags"]] = relationship("Tags", back_populates="tagged_user", cascade="all, delete-orphan")
     teams: Mapped[list["TeamMembers"]] = relationship("TeamMembers", back_populates="user")
-    sent_messages: Mapped[list["Messages"]] = relationship("Messages", back_populates="sender")
-    received_messages: Mapped[list["Messages"]] = relationship("Messages", back_populates="receiver")
+    messages: Mapped[list["Messages"]] = relationship("Messages", back_populates="user")
     chats: Mapped[list["ChatMembers"]] = relationship("ChatMembers", back_populates="user")
     saved_contents: Mapped[list["SavedContents"]] = relationship("SavedContents", back_populates="user")
 
@@ -60,12 +62,12 @@ class Sellers(Base):
     user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), unique=True, nullable=False)
     portfolio_url: Mapped[str] = mapped_column(String, nullable=True)
 
-    applications: Mapped[list["JobApplications"]] = relationship("JobApplication", back_populates="seller")
-    skills: Mapped[list["SellersSkills"]] = relationship("SellerSkills", back_populates="seller")
+    applications: Mapped[list["JobApplications"]] = relationship("JobApplications", back_populates="seller")
+    skills: Mapped[list["SellersSkills"]] = relationship("SellersSkills", back_populates="seller")
     orders: Mapped[list["Orders"]] = relationship("Orders", back_populates="seller")
     reviews: Mapped[list["Reviews"]] = relationship("Reviews", back_populates="buyer_review")
     clients: Mapped[list["Buyers"]] = relationship("Buyers", back_populates="sellers", secondary=buyer_seller)
-    user: Mapped["Users"] = relationship("Users", back_populates="seller_profile")
+    user: Mapped["Users"] = relationship(Users, back_populates="seller_profile")
 
 class Teams(Base):
     __tablename__ = "teams"
@@ -83,10 +85,9 @@ class TeamMembers(Base):
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
     team_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("teams.id"), nullable=False)
     user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    username: Mapped[str] = mapped_column(String, ForeignKey("users.username"),nullable=False, unique=True)
     joined_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
 
-    team: Mapped["Teams"] = relationship("Teams", back_populates="members")
-    user: Mapped["Users"] = relationship("Users", back_populates="teams")
+    team: Mapped["Teams"] = relationship("Teams", back_populates="members", foreign_keys=[team_id])
+    user: Mapped["Users"] = relationship("Users", back_populates="teams", foreign_keys=[user_id])
 
 
