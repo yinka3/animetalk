@@ -28,7 +28,7 @@ class Users(Base):
     password: Mapped[str] = mapped_column(String, nullable=False)
     role: Mapped[UserRole] = mapped_column(Enum(UserRole), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now)
 
 
     buyer_profile: Mapped[Optional["Buyers"]] = relationship("Buyers", back_populates="user", uselist=False)
@@ -51,7 +51,7 @@ class Buyers(Base):
 
     jobs: Mapped[list["Jobs"]] = relationship("Jobs", back_populates="buyer")
     orders: Mapped[list["Orders"]] = relationship("Orders", back_populates="buyer")
-    reviews: Mapped[list["Reviews"]] = relationship("Reviews", back_populates="seller_review")
+    reviews: Mapped[list["Reviews"]] = relationship("Reviews", back_populates="buyer_review", foreign_keys="[Reviews.buyer_id]")
     user: Mapped["Users"] = relationship("Users", back_populates="buyer_profile")
     sellers: Mapped[list["Sellers"]] = relationship("Sellers", back_populates="clients", secondary=buyer_seller)
 
@@ -63,9 +63,9 @@ class Sellers(Base):
     portfolio_url: Mapped[str] = mapped_column(String, nullable=True)
 
     applications: Mapped[list["JobApplications"]] = relationship("JobApplications", back_populates="seller")
-    skills: Mapped[list["SellersSkills"]] = relationship("SellersSkills", back_populates="seller")
-    orders: Mapped[list["Orders"]] = relationship("Orders", back_populates="seller")
-    reviews: Mapped[list["Reviews"]] = relationship("Reviews", back_populates="buyer_review")
+    skills: Mapped[list["SellersSkills"]] = relationship("SellersSkills", back_populates="seller", foreign_keys="[SellersSkills.seller_id]")
+    orders: Mapped[list["Orders"]] = relationship("Orders", back_populates="seller", foreign_keys="[Orders.seller_id]")
+    reviews: Mapped[list["Reviews"]] = relationship("Reviews", back_populates="seller_review", foreign_keys="[Reviews.seller_id]")
     clients: Mapped[list["Buyers"]] = relationship("Buyers", back_populates="sellers", secondary=buyer_seller)
     user: Mapped["Users"] = relationship(Users, back_populates="seller_profile")
 
@@ -76,7 +76,7 @@ class Teams(Base):
     name: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
 
-    members: Mapped[list["TeamMembers"]] = relationship("TeamMembers", back_populates="team", cascade="all, delete-orphan")
+    members: Mapped[list["TeamMembers"]] = relationship("TeamMembers", back_populates="team", cascade="all, delete-orphan", foreign_keys="[TeamMembers.team_id]")
 
 class TeamMembers(Base):
 
