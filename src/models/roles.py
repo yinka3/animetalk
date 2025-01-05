@@ -1,6 +1,7 @@
 from typing import Optional, TYPE_CHECKING
+
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy import Table, ForeignKey, Enum, UUID, String, Boolean, DateTime, Column
+from sqlalchemy import Table, ForeignKey, Enum, UUID, String, Boolean, DateTime, Column, ARRAY
 from datetime import datetime
 from uuid import uuid4
 from src.database import Base
@@ -29,7 +30,7 @@ class Users(Base):
     role: Mapped[UserRole] = mapped_column(Enum(UserRole), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now)
-
+    team_names: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=True)
 
     buyer_profile: Mapped[Optional["Buyers"]] = relationship("Buyers", back_populates="user", uselist=False)
     seller_profile: Mapped[Optional["Sellers"]] = relationship("Sellers", back_populates="user", uselist=False)

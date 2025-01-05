@@ -28,7 +28,7 @@ class SellersBaseSchema(BaseModel):
     rating: float = Field(0.0, description="Seller's rating.")
 
     class Config:
-        from_attributes = True
+        from_attribute = True
 
 
 class SellersSchema(SellersBaseSchema):
@@ -39,7 +39,13 @@ class SellersSchema(SellersBaseSchema):
 class CreateSellerSchema(SellersBaseSchema):
     user_id: UUID = Field(..., description="The seller's unique ID.")
 
+class GetUserResponseSchema(BaseModel):
+    username: str = Field(..., min_length=3, max_length=50, description="The user's unique username.")
+    is_active: bool = Field(True, description="Indicates whether the user is active.")
+    team_names: Optional[list[str]] = Field(None, description="The teams that the user belongs to.")
 
+    class Config:
+        from_attribute = True
 
 class UserBaseSchema(BaseModel):
     username: str = Field(..., min_length=3, max_length=50, description="The user's unique username.")
@@ -49,7 +55,8 @@ class UserBaseSchema(BaseModel):
     created_at: Optional[datetime] = Field(..., description="The date and time when the user account was created.")
 
     class Config:
-        from_attributes = True
+        from_attribute = True
+
 
 class UserProfileSchema(UserBaseSchema):
     id: UUID = Field(..., description="The unique identifier of the user.")
@@ -91,6 +98,14 @@ class CreateUserSchema(UserBaseSchema):
             raise ValueError("Password must contain at least one uppercase letter.")
         return value
 
+
+class UserPasswordUpdateResponse(BaseModel):
+    update_at: datetime
+
+class UserPasswordUpdate(BaseModel):
+    old_password: str
+    new_password: str
+
 class CreateUserResponseSchema(UserBaseSchema):
     id: UUID = Field(..., description="The user's unique ID.")
 
@@ -100,6 +115,6 @@ class DeleteUserSchema(BaseModel):
     reason: Optional[str] = Field(None, description="Reason for deleting the user account.")
 
     class Config:
-        from_attributes = True
+        from_attribute = True
 
 
