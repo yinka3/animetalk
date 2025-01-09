@@ -99,12 +99,9 @@ class CreateUserSchema(UserBaseSchema):
         return value
 
 
-class UserPasswordUpdateResponse(BaseModel):
-    update_at: datetime
-
 class UserPasswordUpdate(BaseModel):
     old_password: str
-    new_password: str
+    new_password: Optional[str]
 
 class CreateUserResponseSchema(UserBaseSchema):
     id: UUID = Field(..., description="The user's unique ID.")

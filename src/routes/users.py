@@ -1,6 +1,6 @@
 import os
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Optional, List
 
 import jwt
 import uvicorn
@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session, InstrumentedAttribute
 
 from src import utils
-from src.schemas.user import CreateUserSchema, UserSchema, CreateUserResponseSchema, UserPasswordUpdateResponse, UserPasswordUpdate, GetUserResponseSchema, UserProfileSchema
+from src.schemas.user import CreateUserSchema, UserSchema, CreateUserResponseSchema, UserPasswordUpdate, GetUserResponseSchema, UserProfileSchema
 from src.models.roles import Users, Teams
 from uuid import UUID
 from src.database import get_db
@@ -83,7 +83,7 @@ def authenticate_user(token: str):
     except PyJWTError:
         raise HTTPException(status_code=401, detail="Authentication failed, invalid or expired token.")
 
-@app.post("/user/login", response_model=Token)
+@app.post("/users/login", response_model=Token)
 def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(Users).filter(Users.email == form_data.username).first()
     if not user or not utils.verify_password(form_data.password, user.password):
@@ -137,14 +137,19 @@ def get_user_by_username(username: UUID, db: Session = Depends(get_db)):
 
     return user
 
-@app.put("/update-password", response_model=UserPasswordUpdateResponse)
+@app.get("users/teams", response_model=List[str])
+def get_user_teams(current_user: Users = Depends(get_current_user), db: Session = Depends(get_db)):
+    teams = db.query(Teams).filter(Teams.members.any(id=current_user.id)).all()
+    return [team.name for team in teams]
+
+@app.put("users/update-password")
 def update_password(password_data: UserPasswordUpdate, current_user: Users = Depends(get_current_user), db: Session = Depends(get_db)):
-    if not verify_password(password_data.old_password, current_user.hashed_password):
+    if not verify_password(password_data.old_password, current_user.password):
         raise HTTPException(status_code=400, detail="Old password is incorrect")
-    current_user.hashed_password = hash_password(password_data.new_password)
+    current_user.password = hash_password(password_data.new_password)
     db.commit()
     db.refresh(current_user)
-    return current_user
+    return {"Updated Password Successfully!": datetime.now()}
 
 if __name__ == "__main__":
     uvicorn.run("src.routes.users:app" , host="127.0.0.1", port=8000, reload=True)
