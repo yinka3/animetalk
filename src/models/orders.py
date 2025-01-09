@@ -29,7 +29,7 @@ class Skills(Base):
     name: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)  # E.g., "3D Modeling", "2D Animation"
     description: Mapped[str] = mapped_column(Text, nullable=True)  # Optional description of the skill
 
-    sellers: Mapped[list["SellersSkills"]] = relationship("SellersSkills", back_populates="skills")
+    sellers: Mapped[list["SellersSkills"]] = relationship("SellersSkills", back_populates="skill", foreign_keys='[SellersSkills.skill_id]')
 
 
 class Orders(Base):

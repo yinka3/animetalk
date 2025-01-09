@@ -5,11 +5,10 @@ import bcrypt
 
 
 class UserRole(Enum):
-    USER = "user"
-    BUYER = "buyer"
-    SELLER = "seller"
-    BOTH = "both"
-    NONE = "none"
+    USER = "USER"
+    BUYER = "BUYER"
+    SELLER = "SELLER"
+    BOTH = "BOTH"
 
 class ContentType(Enum):
     POST = "post"
