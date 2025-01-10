@@ -48,7 +48,9 @@ class Buyers(Base):
     __tablename__ = "buyers"
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
-    user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), unique=True, nullable=False)
+    user_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), unique=True, nullable=True)
+    name: Mapped[Optional[str]] = mapped_column(String, nullable=False)
+    email: Mapped[Optional[str]] = mapped_column(String, nullable=False, unique=True)
 
     jobs: Mapped[list["Jobs"]] = relationship("Jobs", back_populates="buyer")
     orders: Mapped[list["Orders"]] = relationship("Orders", back_populates="buyer")
@@ -60,8 +62,10 @@ class Sellers(Base):
     __tablename__ = "sellers"
 
     id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, nullable=False, default=uuid4)
-    user_id: Mapped[UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), unique=True, nullable=False)
+    user_id: Mapped[Optional[UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), unique=True, nullable=True)
     portfolio_url: Mapped[str] = mapped_column(String, nullable=True)
+    name: Mapped[Optional[str]] = mapped_column(String, nullable=False)
+    email: Mapped[Optional[str]] = mapped_column(String, nullable=False, unique=True)
 
     applications: Mapped[list["JobApplications"]] = relationship("JobApplications", back_populates="seller")
     skills: Mapped[list["SellersSkills"]] = relationship("SellersSkills", back_populates="seller", foreign_keys="[SellersSkills.seller_id]")

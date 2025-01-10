@@ -8,8 +8,9 @@ from src.utils import UserRole
 
 
 class BuyersBaseSchema(BaseModel):
-    id: UUID
-    user_id: UUID
+    user_id: Optional[UUID]
+    email: Optional[EmailStr]
+    name: Optional[str]
 
     class Config:
         from_attributes = True
@@ -19,7 +20,7 @@ class BuyersSchema(BuyersBaseSchema):
 
 
 class CreateBuyerSchema(BuyersBaseSchema):
-    user_id: UUID = Field(..., description="The buyer's unique ID.")
+    pass
 
 
 class SellersBaseSchema(BaseModel):
