@@ -10,12 +10,12 @@ from jwt import PyJWTError
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, InstrumentedAttribute
 
-from src import utils
+from src.utils import UserRole, verify_password, hash_password
 from src.schemas.user import CreateUserSchema, UserSchema, CreateUserResponseSchema, UserPasswordUpdate, GetUserResponseSchema, UserProfileSchema
 from src.models.roles import Users, Teams
-from uuid import UUID
+from sqlalchemy import UUID
 from src.database import get_db
-from src.utils import hash_password, verify_password
+
 
 app = FastAPI()
 
@@ -37,7 +37,8 @@ def create_user(user: CreateUserSchema, db: Session = Depends(get_db)):
 
     # Hash the password and create the user
     hashed_password = hash_password(user.password)
-    new_user = Users(username=user.username, email=user.email, password=hashed_password, role=user.role.USER.value, is_active=user.is_active)
+    new_user = Users(username=user.username, email=user.email, password=hashed_password, is_active=user.is_active)
+    new_user.role.append(UserRole.USER.value)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -86,7 +87,7 @@ def authenticate_user(token: str):
 @app.post("/users/login", response_model=Token)
 def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(Users).filter(Users.email == form_data.username).first()
-    if not user or not utils.verify_password(form_data.password, user.password):
+    if not user or not verify_password(form_data.password, user.password):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid credentials.",

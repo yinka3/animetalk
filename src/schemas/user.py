@@ -19,10 +19,6 @@ class BuyersSchema(BuyersBaseSchema):
     pass
 
 
-class CreateBuyerSchema(BuyersBaseSchema):
-    pass
-
-
 class SellersBaseSchema(BaseModel):
     skills: dict = Field(..., description="Skills of the seller.")
     portfolio_url: Optional[str] = Field(None, description="URL to the seller's portfolio.")
