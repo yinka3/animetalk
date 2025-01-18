@@ -33,6 +33,10 @@ class Proficiency(Enum):
     INTERMEDIATE = "intermediate"
     EXPERT = "expert"
 
+class ChatType(Enum):
+    PRIVATE = "private"
+    GROUP = "group"
+
 def parse_mentions(content):
     return re.findall(r"@(\w+)", content)
 

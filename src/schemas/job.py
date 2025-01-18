@@ -46,9 +46,9 @@ class JobBaseSchema(BaseModel):
 class JobsSchema(JobBaseSchema):
     id: UUID = Field(..., description="The unique ID of the job.")
 
-
-class CreateJobSchema(JobBaseSchema):
+class CreateJobResponseSchema(JobBaseSchema):
     buyer_id: UUID = Field(..., description="The ID of the buyer posting the job.")
+
 
 
 class UpdateJobSchema(BaseModel):
