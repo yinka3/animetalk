@@ -10,7 +10,7 @@ from src.utils import UserRole
 
 if TYPE_CHECKING:  # Imports used only for type checking
     from src.models.content import Reviews, Comments, Posts, FanArts, Tags, SavedContents
-    from src.models.chat import Messages, ChatMembers
+    from src.models.chat import Messages, ChatMembers, Chats
     from src.models.orders import Jobs, Orders, JobApplications, SellersSkills
 
 buyer_seller = Table(
@@ -43,6 +43,7 @@ class Users(Base):
     messages: Mapped[list["Messages"]] = relationship("Messages", back_populates="user")
     chats: Mapped[list["ChatMembers"]] = relationship("ChatMembers", back_populates="user")
     saved_contents: Mapped[list["SavedContents"]] = relationship("SavedContents", back_populates="user")
+    created_chats: Mapped[list["Chats"]] = relationship("Chats", back_populates="owner")
 
 class Buyers(Base):
     __tablename__ = "buyers"

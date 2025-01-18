@@ -10,6 +10,7 @@ from jwt import PyJWTError
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, InstrumentedAttribute
 
+from src.aouth import create_access_token, get_current_user
 from src.utils import UserRole, verify_password, hash_password
 from src.schemas.user import CreateUserSchema, UserSchema, CreateUserResponseSchema, UserPasswordUpdate, GetUserResponseSchema, UserProfileSchema
 from src.models.roles import Users, Teams
@@ -44,45 +45,7 @@ def create_user(user: CreateUserSchema, db: Session = Depends(get_db)):
     db.refresh(new_user)
     return new_user
 
-# might need to add a param: expires_delta=access_token_expires
-def create_access_token(data: dict):
-    to_encode = data.copy()
-    expire = datetime.now() + timedelta(minutes=60)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, os.environ.get("SECRET_KEY"), algorithm=os.environ.get("ALGORITHM"))
-    return encoded_jwt
 
-# might need to have a param: form_data: OAuth2PasswordRequestForm = Depends()
-def get_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
-    # access_token_expires = timedelta(minutes=int(os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES")))
-    access_token = create_access_token(
-        data={"sub": form_data.username},
-    )
-    return access_token
-
-
-def authenticate_user(token: str):
-    try:
-        payload = jwt.decode(token, os.environ.get("SECRET_KEY"), algorithms=[os.environ.get("ALGORITHM")])
-
-        exp_time = payload.get("exp")
-        if exp_time is None or exp_time < datetime.now().timestamp():
-            # self.activeSessionsEntityManager.delete_many({"username": username})
-            # recreating this code on top w/o entity manager
-            raise HTTPException(status_code=401, detail="Authentication failed, invalid or expired token.")
-
-        username: str = payload.get("sub")
-        if not username:
-            raise HTTPException(status_code=400, detail="Incorrect user")
-        token_data = TokenData(user=username)
-        return token_data
-
-        # Check if the username exists in the active sessions
-        # session = self.activeSessionsEntityManager.find_one({"username": username})
-        # if not session:
-        #     raise HTTPException(status_code=401, detail="User session not found.")
-    except PyJWTError:
-        raise HTTPException(status_code=401, detail="Authentication failed, invalid or expired token.")
 
 @app.post("/users/login", response_model=Token)
 def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
@@ -97,18 +60,6 @@ def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), 
 
     return {"message": "Welcome Mother*ucker"}
     #return {"access_token": access_token, "token_type": "bearer"}
-
-def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_scheme)):
-
-    token = authenticate_user(token)
-
-    if not token:
-        raise HTTPException(status_code=401, detail="Authentication failed, invalid or expired token.")
-    user = db.query(Users).filter(Users.username == token.username).first()
-
-    if not user:
-        raise HTTPException(status_code=401, detail="Authentication failed, invalid or expired token.")
-    return user
 
 @app.get("users/me", response_model=UserProfileSchema)
 def get_my_account(current_user: Users = Depends(get_current_user)):
