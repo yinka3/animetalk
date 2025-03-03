@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional, List
 from sqlalchemy import UUID
 from src.models import ChatMembers
-from src.utils import ChatType
+from src.utils import ChatType, MessageType
 
 
 class CreateChat(BaseModel):
@@ -24,28 +24,12 @@ class ChatResponse(BaseModel):
         orm_mode = True
 
 class CreateMessage(BaseModel):
+    id: UUID
     chat_id: UUID
     user_id: UUID
     content: str
     sent_at: datetime
-
-    class Config:
-        orm_mode = True
-
-class MessageResponse(BaseModel):
-    chat_id: UUID
-    user_id: UUID
-    content: str
-    is_read: bool
-
-    class Config:
-        orm_mode = True
-
-class UpdateMessage(BaseModel):
-    chat_id: UUID
-    user_id: UUID
-    content: str
-    updated_at: datetime
+    type: MessageType = MessageType.NEW_MESSAGE
 
     class Config:
         orm_mode = True

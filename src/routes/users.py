@@ -2,11 +2,9 @@ import os
 from datetime import datetime, timedelta
 from typing import Optional, List
 
-import jwt
 import uvicorn
 from fastapi import FastAPI, HTTPException, Depends, status, Response
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
-from jwt import PyJWTError
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, InstrumentedAttribute
 
