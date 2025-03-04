@@ -16,12 +16,14 @@ class CreateChat(BaseModel):
     class Config:
         orm_mode = True
 
+
 class ChatResponse(BaseModel):
     name: str
     members: List[ChatMembers]
 
     class Config:
         orm_mode = True
+
 
 class CreateMessage(BaseModel):
     id: UUID
@@ -34,12 +36,18 @@ class CreateMessage(BaseModel):
     class Config:
         orm_mode = True
 
+
 class AddChatMember(BaseModel):
     chat_id: UUID
     user_id: UUID
 
     class Config:
         orm_mode = True
+
+
+class RemoveChatMember(AddChatMember):
+    pass
+
 
 class ChatMemberResponse(BaseModel):
     chat_id: UUID
@@ -49,11 +57,10 @@ class ChatMemberResponse(BaseModel):
     class Config:
         orm_mode = True
 
+
 class RemoveChatMemberResponse(BaseModel):
     chat_id: UUID
     user_id: UUID
 
     class Config:
         orm_mode = True
-
-
