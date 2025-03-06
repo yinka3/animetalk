@@ -8,7 +8,9 @@ class UserRole(Enum):
     USER = "USER"
     BUYER = "BUYER"
     SELLER = "SELLER"
-    BOTH = "BOTH"
+    USERSELLER = "USERSELLER"
+    USERBUYER = "USERBUYER"
+    ALL = "ALL"
 
 
 class ContentType(Enum):
@@ -46,6 +48,7 @@ class ChatType(Enum):
 class MessageType(Enum):
     NEW_MESSAGE = "new_message"
     EDITING = "editing"
+
 
 
 def parse_mentions(content):

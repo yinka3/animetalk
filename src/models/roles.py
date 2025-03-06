@@ -1,5 +1,6 @@
 from typing import Optional, TYPE_CHECKING
 
+from alembic.operations.toimpl import create_constraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import Table, ForeignKey, Enum, UUID, String, Boolean, DateTime, Column, ARRAY
 from datetime import datetime
@@ -20,6 +21,7 @@ buyer_seller = Table(
     Column("seller_id", UUID(as_uuid=True), ForeignKey("sellers.id"), primary_key=True),
 )
 
+
 class Users(Base):
     __tablename__ = "users"
 
@@ -27,7 +29,7 @@ class Users(Base):
     username: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     email: Mapped[str] = mapped_column(String, nullable=False, unique=True)
     password: Mapped[str] = mapped_column(String, nullable=False)
-    role: Mapped[list[UserRole]] = mapped_column(ARRAY(Enum(UserRole)), nullable=True)
+    role: Mapped[UserRole] = mapped_column(Enum(UserRole), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.now)
     team_names: Mapped[list[str]] = mapped_column(ARRAY(String), nullable=True)

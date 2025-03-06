@@ -14,7 +14,7 @@ class CreateChat(BaseModel):
     chat_type: Optional[ChatType]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class ChatResponse(BaseModel):
@@ -22,7 +22,7 @@ class ChatResponse(BaseModel):
     members: List[ChatMembers]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class CreateMessage(BaseModel):
@@ -34,7 +34,7 @@ class CreateMessage(BaseModel):
     type: MessageType = MessageType.NEW_MESSAGE
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class AddChatMember(BaseModel):
@@ -42,7 +42,7 @@ class AddChatMember(BaseModel):
     user_id: UUID
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class RemoveChatMember(AddChatMember):
@@ -55,7 +55,7 @@ class ChatMemberResponse(BaseModel):
     username: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class RemoveChatMemberResponse(BaseModel):
@@ -63,4 +63,4 @@ class RemoveChatMemberResponse(BaseModel):
     user_id: UUID
 
     class Config:
-        orm_mode = True
+        from_attributes = True

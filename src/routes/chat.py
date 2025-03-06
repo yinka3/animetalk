@@ -181,7 +181,7 @@ def remove_member(chat_id: UUID, member: RemoveChatMember,
     db.commit()
 
     return {
-        "message": f"User {member.username} removed from chat successfully.",
+        "message": f"User {current_user.username} removed from chat successfully.",
         "chat_name": chat.name
     }
 

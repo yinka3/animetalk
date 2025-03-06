@@ -1,27 +1,20 @@
-import os
-from datetime import datetime, timedelta
-from typing import Optional, List
-
-import fastapi
-import jwt
 import uvicorn
 from fastapi import FastAPI, HTTPException, Depends, status, Response
-from sqlalchemy import UUID
+from uuid import UUID
 from sqlalchemy.orm import Session
 
 from src.database import get_db
 from src.models import Buyers, Users, Orders, Jobs, Sellers
-from src.aouth import get_current_user
+from src.routes.users import get_current_user
 from src.schemas.job import JobsSchema
-from src.schemas.user import CreateUserSchema
 from src.utils import UserRole, hash_password, verify_password, OrderStatus
 
-app = FastAPI()
 
 # TODO: See if needing to do authentication for buyers and sellers is needed (probably)
+app = FastAPI()
 
 @app.post("/buyer/register")
-def create_buyer(current_user: Users = Depends(get_current_user), db: Session = Depends(get_db())):
+def create_buyer(current_user: Users = Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.buyer_profile:
         raise HTTPException(status_code=400, detail="Buyer already registered")
 
@@ -54,7 +47,7 @@ def view_buyer_orders(current_user: Users = Depends(buyer_access)):
     return buyer.orders
 
 @app.post("buyer/orders/{order_id}")
-def cancel_order(order_id: UUID, current_user: Users = Depends(buyer_access), db: Session = Depends(get_db())):
+def cancel_order(order_id: UUID, current_user: Users = Depends(buyer_access), db: Session = Depends(get_db)):
 
     buyer = current_user.buyer_profile
 
@@ -73,7 +66,7 @@ def cancel_order(order_id: UUID, current_user: Users = Depends(buyer_access), db
         raise HTTPException(status_code=400, detail="Order not found")
 
 @app.get("/buyer/{current_user.username}/orders/{order_id}")
-def view_an_order(order_id: UUID, current_user: Users = Depends(buyer_access), db: Session = Depends(get_db())):
+def view_an_order(order_id: UUID, current_user: Users = Depends(buyer_access), db: Session = Depends(get_db)):
     buyer = current_user.buyer_profile
     if not buyer:
         raise HTTPException(status_code=403, detail="You must have a buyer profile to access this resource.")
@@ -147,7 +140,8 @@ def post_job(new_job: JobsSchema, current_user: Users = Depends(buyer_access), d
 
 
 
-
+if __name__ == "__main__":
+    uvicorn.run("src.routes.buyers:app" , host="127.0.0.1", port=8000, reload=True)
 
 
 

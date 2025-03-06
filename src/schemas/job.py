@@ -10,7 +10,7 @@ class JobApplicationBaseSchema(BaseModel):
     bid_amount: float = Field(..., description="The amount bid by the seller for the job.")
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class JobApplicationsSchema(JobApplicationBaseSchema):
@@ -30,7 +30,7 @@ class UpdateJobApplicationSchema(BaseModel):
     status: Optional[JobStatus] = Field(None, description="The updated status of the application (e.g., 'Accepted', 'Rejected').")
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class JobBaseSchema(BaseModel):
@@ -40,7 +40,7 @@ class JobBaseSchema(BaseModel):
     deadline: Optional[datetime] = Field(None, description="The deadline for the job.")
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class JobsSchema(JobBaseSchema):
@@ -58,7 +58,7 @@ class UpdateJobSchema(BaseModel):
     deadline: Optional[datetime] = Field(None, description="The updated deadline for the job.")
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class JobSummarySchema(BaseModel):
     id: UUID = Field(..., description="The unique ID of the job.")
@@ -66,4 +66,4 @@ class JobSummarySchema(BaseModel):
     budget: Optional[float] = Field(None, description="The budget allocated for the job.")
 
     class Config:
-        orm_mode = True
+        from_attributes = True

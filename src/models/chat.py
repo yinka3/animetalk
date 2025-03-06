@@ -36,7 +36,7 @@ class Messages(Base):
                                           nullable=False)  # Single FK to Users
     content: Mapped[str] = mapped_column(String, nullable=False)
     sent_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now, nullable=False)
-    type: Mapped[MessageType] = mapped_column(MessageType, default=MessageType.NEW_MESSAGE)
+    type: Mapped[MessageType] = mapped_column(Enum(MessageType), default=MessageType.NEW_MESSAGE)
 
     user: Mapped["Users"] = relationship("Users", back_populates="messages")
     chat: Mapped["Chats"] = relationship("Chats", back_populates="messages")

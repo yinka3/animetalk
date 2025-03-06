@@ -38,7 +38,7 @@ class CreateSellerSchema(SellersBaseSchema):
 
 class GetUserResponseSchema(BaseModel):
     username: str = Field(..., min_length=3, max_length=50, description="The user's unique username.")
-    is_active: bool = Field(True, description="Indicates whether the user is active.")
+    is_active: bool = Field(False, description="Indicates whether the user is active.")
     team_names: Optional[list[str]] = Field(None, description="The teams that the user belongs to.")
 
     class Config:
@@ -48,7 +48,7 @@ class UserBaseSchema(BaseModel):
     username: str = Field(..., min_length=3, max_length=50, description="The user's unique username.")
     email: EmailStr = Field(..., description="The user's email address.")
     role: UserRole = Field(UserRole.USER, description="The user's role in the system.")
-    is_active: bool = Field(True, description="Indicates whether the user is active.")
+    is_active: bool = Field(False, description="Indicates whether the user is active.")
     created_at: Optional[datetime] = Field(..., description="The date and time when the user account was created.")
 
     class Config:
@@ -98,10 +98,11 @@ class CreateUserSchema(UserBaseSchema):
 
 class UserPasswordUpdate(BaseModel):
     old_password: str
-    new_password: Optional[str]
+    new_password: str
 
 class CreateUserResponseSchema(UserBaseSchema):
     id: UUID = Field(..., description="The user's unique ID.")
+
 
 
 class DeleteUserSchema(BaseModel):
