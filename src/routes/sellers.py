@@ -45,9 +45,3 @@ def create_seller(user: Users = Depends(get_current_user), db = Depends(get_db))
 @router.get("/me")
 def get_seller_account(current_user: Users = Depends(seller_access)):
     return current_user
-
-@router.post("/seller/job_applications")
-def create_application(application: CreateJobApplicationSchema, db: Session = Depends(get_db), current_user: Users = Depends(seller_access)):
-
-
-@router.get("/seller/orders")
