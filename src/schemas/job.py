@@ -36,15 +36,15 @@ class UpdateJobApplicationSchema(BaseModel):
 class JobBaseSchema(BaseModel):
     title: str = Field(..., description="The title of the job.")
     description: str = Field(..., description="A detailed description of the job.")
-    budget: Optional[float] = Field(None, description="The budget allocated for the job.")
-    deadline: Optional[datetime] = Field(None, description="The deadline for the job.")
+    budget: float = Field(..., description="The budget allocated for the job.")
+    deadline: str = Field(..., description="The deadline for the job.")
 
     class Config:
         from_attributes = True
 
 
 class JobsSchema(JobBaseSchema):
-    id: UUID = Field(..., description="The unique ID of the job.")
+    pass
 
 class CreateJobResponseSchema(JobBaseSchema):
     buyer_id: UUID = Field(..., description="The ID of the buyer posting the job.")
@@ -52,10 +52,10 @@ class CreateJobResponseSchema(JobBaseSchema):
 
 
 class UpdateJobSchema(BaseModel):
-    title: Optional[str] = Field(None, description="The updated title of the job.")
-    description: Optional[str] = Field(None, description="An updated detailed description of the job.")
-    budget: Optional[float] = Field(None, description="The updated budget allocated for the job.")
-    deadline: Optional[datetime] = Field(None, description="The updated deadline for the job.")
+    title: Optional[str] = Field(..., description="The updated title of the job.")
+    description: Optional[str] = Field(..., description="An updated detailed description of the job.")
+    budget: Optional[float] = Field(..., description="The updated budget allocated for the job.")
+    deadline: Optional[datetime] = Field(..., description="The updated deadline for the job.")
 
     class Config:
         from_attributes = True
@@ -67,3 +67,7 @@ class JobSummarySchema(BaseModel):
 
     class Config:
         from_attributes = True
+
+class SearchFilter(BaseModel):
+    skill: Optional[str] = Field(..., description="The name of the skill.")
+    rating: Optional[int] = Field(..., description="The rating of the seller.")

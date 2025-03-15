@@ -1,19 +1,20 @@
 from typing import List, Dict, Set, Any
 from uuid import UUID
 
-from fastapi import WebSocket, Depends, FastAPI, HTTPException
+from fastapi import WebSocket, Depends, FastAPI, HTTPException, APIRouter
 from sqlalchemy.orm import Session
 from starlette.websockets import WebSocketDisconnect
 
-from src.aouth import get_current_user
+from src.routes.users import get_current_user
 from src.database import get_db
 from src.models import Users
 from src.models.chat import Chats, ChatMembers, Messages
 from src.schemas.chat import CreateChat, AddChatMember, CreateMessage, RemoveChatMember
 from src.utils import ChatType, MessageType
 
-app = FastAPI()
-
+router = APIRouter(
+    tags=['Chat']
+)
 
 class ConnectionManager:
     def __init__(self):
@@ -44,7 +45,7 @@ class ConnectionManager:
 connection_manager = ConnectionManager()
 
 
-@app.websocket("/ws/chat/{chat_id}")
+@router.websocket("/ws/chat/{chat_id}")
 async def websocket_endpoint(websocket: WebSocket, chat: Chats, db: Session = Depends(get_db())):
     chat = db.query(Chats).filter(Chats.id == chat.id).first()
 
@@ -87,7 +88,7 @@ async def websocket_endpoint(websocket: WebSocket, chat: Chats, db: Session = De
         connection_manager.disconnect(chat, websocket)
 
 
-@app.post("/chat/create")
+@router.post("/chat/create")
 def create_chat(chat: CreateChat, db: Session = Depends(get_db), user: Users = Depends(get_current_user)):
     old_chat = db.query(Chats).filter(Chats.id == chat.id).first()
 
@@ -115,7 +116,7 @@ def create_chat(chat: CreateChat, db: Session = Depends(get_db), user: Users = D
         "members": new_chat.members}
 
 
-@app.post("/chat/update/add_member/{chat_id}")
+@router.post("/chat/update/add_member/{chat_id}")
 def add_member(chat_id: UUID, member: AddChatMember,
                db: Session = Depends(get_db), current_user: Users = Depends(get_current_user)):
     chat = db.query(Chats).filter(Chats.id == chat_id).first()
@@ -154,7 +155,7 @@ def add_member(chat_id: UUID, member: AddChatMember,
             "user": current_user}
 
 
-@app.delete("/chat/remove_member/{chat_id}")
+@router.delete("/chat/remove_member/{chat_id}")
 def remove_member(chat_id: UUID, member: RemoveChatMember,
                   db: Session = Depends(get_db),
                   current_user: Users = Depends(get_current_user)):
@@ -185,7 +186,7 @@ def remove_member(chat_id: UUID, member: RemoveChatMember,
         "chat_name": chat.name
     }
 
-@app.delete("/chat/leave/{chat_id}")
+@router.delete("/chat/leave/{chat_id}")
 def leave_chat(chat_id: UUID, db: Session = Depends(get_db), current_user: Users = Depends(get_current_user)):
     chat = db.query(Chats).filter(Chats.id == chat_id).first()
 
