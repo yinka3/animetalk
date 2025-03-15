@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta
 from typing import Optional, List
 
-import uvicorn
+import logging
 import src.aouth as aouth
-from fastapi import FastAPI, HTTPException, Depends, status, Response
+from fastapi import FastAPI, HTTPException, Depends, status, Response, APIRouter
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from src.utils import UserRole, verify_password, hash_password
@@ -13,13 +13,10 @@ from uuid import UUID
 from src.database import get_db
 
 
-app = FastAPI()
 
-# class Token(BaseModel):
-#     access_token: str
-#     token_type: str
-#     token_expires: Optional[datetime]
-
+router = APIRouter(
+    tags=['User']
+)
 
 
 
@@ -35,10 +32,10 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
     user = db.query(Users).filter(Users.username == token.user).first()
 
     if not user:
-        raise HTTPException(status_code=401, detail="Authentication failed, invalid or expired token.")
+        raise HTTPException(status_code=401, detail="Authentication failed, not a user.")
     return user
 
-@app.post("/users/register", response_model=CreateUserResponseSchema)
+@router.post("/users/register", response_model=CreateUserResponseSchema)
 def create_user(user: CreateUserSchema, db: Session = Depends(get_db)):
     # Check if the email or username already exists
     if db.query(Users).filter(Users.email == user.email).first() or db.query(Users).filter(Users.username == user.username).first():
@@ -56,7 +53,7 @@ def create_user(user: CreateUserSchema, db: Session = Depends(get_db)):
     return new_user
 
 
-@app.post("/login")
+@router.post("/login")
 def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(Users).filter(Users.username == form_data.username).first()
     if not user:
@@ -79,7 +76,7 @@ def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends(), 
 
     return {"message": "Welcome Mother*ucker", "access_token": access_token, "token_type": "bearer"}
 
-@app.post("/users/logout")
+@router.post("/users/logout")
 def logout(response: Response, user: Users = Depends(get_current_user), db: Session = Depends(get_db)):
     user.is_active = False  # Mark user as inactive
     db.commit()
@@ -91,11 +88,11 @@ def logout(response: Response, user: Users = Depends(get_current_user), db: Sess
     return {"message": "GoodBye Mother*ucker."}
 
 
-@app.get("/users/me", response_model=UserProfileSchema)
+@router.get("/users/me", response_model=UserProfileSchema)
 def get_my_account(current_user: Users = Depends(get_current_user)):
     return current_user
 
-@app.get("/users/id/{user_id}", response_model=GetUserResponseSchema)
+@router.get("/users/id/{user_id}", response_model=GetUserResponseSchema)
 def get_user_by_id(user_id: UUID, db: Session = Depends(get_db)):
     user = db.query(Users).filter(Users.id == user_id).first()
     if not user:
@@ -104,7 +101,7 @@ def get_user_by_id(user_id: UUID, db: Session = Depends(get_db)):
     return user
 
 
-@app.get("/users/username/{username}", response_model=GetUserResponseSchema)
+@router.get("/users/username/{username}", response_model=GetUserResponseSchema)
 def get_user_by_username(username: str, db: Session = Depends(get_db)):
     user = db.query(Users).filter(Users.username == username).first()
     if not user:
@@ -112,12 +109,12 @@ def get_user_by_username(username: str, db: Session = Depends(get_db)):
 
     return user
 
-@app.get("/users/teams", response_model=List[str])
+@router.get("/users/teams", response_model=List[str])
 def get_user_teams(current_user: Users = Depends(get_current_user), db: Session = Depends(get_db)):
     teams = db.query(Teams).filter(Teams.members.any(id=current_user.id)).all()
     return [team.name for team in teams]
 
-@app.put("/users/update-password")
+@router.put("/users/update-password")
 def update_password(password_data: UserPasswordUpdate, current_user: Users = Depends(get_current_user), db: Session = Depends(get_db)):
     old_password = password_data.old_password
     if not verify_password(old_password, current_user.password):
@@ -127,6 +124,3 @@ def update_password(password_data: UserPasswordUpdate, current_user: Users = Dep
     db.commit()
     db.refresh(current_user)
     return {"Updated Password Successfully!": datetime.now()}
-
-if __name__ == "__main__":
-    uvicorn.run("src.routes.users:app" , host="127.0.0.1", port=8000, reload=True, log_level="debug")

@@ -1,19 +1,26 @@
-import uvicorn
-from fastapi import FastAPI, HTTPException, Depends, status, Response
+import logging
+from datetime import datetime
+
+from fastapi import FastAPI, HTTPException, Depends, status, Response, APIRouter
 from uuid import UUID
+
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from src.database import get_db
-from src.models import Buyers, Users, Orders, Jobs, Sellers
+from src.models import Buyers, Users, Orders, Jobs, Sellers, Reviews
+from src.models.orders import Skills, SellersSkills
 from src.routes.users import get_current_user
-from src.schemas.job import JobsSchema
+from src.schemas.job import JobsSchema, SearchFilter
 from src.utils import UserRole, hash_password, verify_password, OrderStatus
 
 
-# TODO: See if needing to do authentication for buyers and sellers is needed (probably)
-app = FastAPI()
+router = APIRouter(
+    tags=['Buyer']
+)
 
-@app.post("/buyer/register")
+
+@router.post("/buyer/register")
 def create_buyer(current_user: Users = Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.buyer_profile:
         raise HTTPException(status_code=400, detail="Buyer already registered")
@@ -22,10 +29,14 @@ def create_buyer(current_user: Users = Depends(get_current_user), db: Session = 
     db.add(new_buyer)
     db.commit()
     db.refresh(new_buyer)
+    logging.info(f"New buyer registered: {new_buyer.id}")
     current_user.buyer_profile = new_buyer
-    if UserRole.BUYER.value not in current_user.role:
-        current_user.role.append(UserRole.BUYER.value)
+    if current_user.role == UserRole.USER:
+        current_user.role = UserRole.USERBUYER
+    else:
+        current_user.role = UserRole.ALL
     db.commit()
+    db.refresh(new_buyer)
     return {"message": "Buyer profile created!",
             "username": current_user.username}
 
@@ -37,16 +48,16 @@ def buyer_access(current_user: Users = Depends(get_current_user)):
         )
     return current_user
 
-@app.get("/buyer/me")
+@router.get("/buyer/me")
 def get_buyer_account(current_user: Users = Depends(buyer_access)):
     return current_user
 
-@app.get("/buyer/{current_user.username}/orders")
+@router.get("/buyer/{current_user.username}/orders")
 def view_buyer_orders(current_user: Users = Depends(buyer_access)):
     buyer = current_user.buyer_profile
     return buyer.orders
 
-@app.post("buyer/orders/{order_id}")
+@router.post("buyer/orders/{order_id}")
 def cancel_order(order_id: UUID, current_user: Users = Depends(buyer_access), db: Session = Depends(get_db)):
 
     buyer = current_user.buyer_profile
@@ -65,7 +76,7 @@ def cancel_order(order_id: UUID, current_user: Users = Depends(buyer_access), db
     else:
         raise HTTPException(status_code=400, detail="Order not found")
 
-@app.get("/buyer/{current_user.username}/orders/{order_id}")
+@router.get("/buyer/{current_user.username}/orders/{order_id}")
 def view_an_order(order_id: UUID, current_user: Users = Depends(buyer_access), db: Session = Depends(get_db)):
     buyer = current_user.buyer_profile
     if not buyer:
@@ -107,41 +118,64 @@ def view_an_order(order_id: UUID, current_user: Users = Depends(buyer_access), d
         raise HTTPException(status_code=400, detail="Order not found")
 
 
-@app.post("/buyer/{current_user.username}/create")
-def post_job(new_job: JobsSchema, current_user: Users = Depends(buyer_access), db: Session = Depends(get_db)):
-    buyer = current_user.buyer_profile
+@router.post("/buyer/create")
+def post_job(new_job: JobsSchema, current_buyer: Users = Depends(buyer_access), db: Session = Depends(get_db)):
+    buyer = current_buyer.buyer_profile
+    deadline = datetime.strptime(new_job.deadline, "%m/%d/%Y")
 
-    job = db.query(Jobs).filter(Jobs.id == new_job.id)
-
-    if job in buyer.jobs:
-        raise HTTPException(status_code=400, detail="Job already exists")
-
-    new_job = Jobs(
+    post_job: Jobs = Jobs(
+        buyer_id = buyer.id,
         title = new_job.title,
         description = new_job.description,
         budget = new_job.budget,
-        deadline = new_job.deadline
+        deadline = deadline
     )
 
-    # recommend jobs ( whole other thing to work on later )
-    db.add(new_job)
+
+    db.add(post_job)
     db.commit()
-    db.refresh(new_job)
+    db.refresh(post_job)
 
     return {
         "message": "Job created!",
         "details": {
-            "title": new_job.title,
-            "created_at": new_job.created_at,
+            "buyer": current_buyer.username,
+            "title": post_job.title,
+            "created_at": post_job.created_at,
         }
     }
 
-# viewing job applications
+@router.get("/buyer/search")
+def search(search_filter: SearchFilter, db: Session = Depends(get_db)):
+
+    query = db.query(Sellers)\
+            .join(SellersSkills, Sellers.id == SellersSkills.seller_id)\
+            .join(Skills, SellersSkills.skill_id == Skills.id)\
+            .outerjoin(Reviews, Sellers.id == Reviews.seller_id)\
+            .group_by(Sellers.id)
+
+    if search_filter.skill and not search_filter.rating:
+        query = query.filter(Skills.name.ilike(f"%{search_filter.skill}%"))
+
+
+    if search_filter.rating and not search_filter.skill:
+        query = query.having(func.coalesce(func.avg(Reviews.rating), 0) >= search_filter.rating)
+
+    sellers = query.all()
+
+    return [
+        {
+            "username": seller.user.username,
+            "portfolio_url": seller.portfolio_url,
+            "reviews": seller.reviews,
+            "skills": seller.skills
+        }
+        for seller in sellers
+    ]
 
 
 
-if __name__ == "__main__":
-    uvicorn.run("src.routes.buyers:app" , host="127.0.0.1", port=8000, reload=True)
+
 
 
 
